@@ -21,7 +21,7 @@ A sophisticated streaming platform .
 - GitHub Pages
 
 ## Live Demo
-Visit [hexatv.github.io](https://hexatv.github.io) to explore the platform.
+Visit [(https://hexa.watch/)](https://hexa.watch/)) to explore the platform.
 
 ## Preview
 [Add screenshots here]
