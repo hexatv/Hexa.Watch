@@ -1019,7 +1019,7 @@ const { useState, useEffect, useRef, useCallback } = React;
         function VideoPlayer({ type, tmdbId, season, episode, onClose }) {
             useEffect(() => {
                 const handleMessage = (event) => {
-                    if (event.origin !== 'https://vidlink.pro') {
+                    if (event.origin !== 'https://api.hexa.watch/') {
                         return;
                     }
 
@@ -1038,8 +1038,8 @@ const { useState, useEffect, useRef, useCallback } = React;
             }, []);
 
             const iframeSrc = type === 'movie' 
-                ? `https://vidlink.pro/movie/${tmdbId}?primaryColor=4facfe&secondaryColor=00f2fe&iconColor=4facfe&title=true&poster=true&autoplay=true`
-                : `https://vidlink.pro/tv/${tmdbId}/${season}/${episode}?primaryColor=4facfe&secondaryColor=00f2fe&iconColor=4facfe&title=true&poster=true&autoplay=true&nextbutton=true`;
+                ? `https://vidlink.pro/${tmdbId}`
+                : `https://vidlink.pro/${tmdbId}/${season}/${episode}`;
 
             return (
                 <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center">
