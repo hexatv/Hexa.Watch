@@ -47,7 +47,6 @@ const { useState, useEffect, useRef, useCallback } = React;
                                     <Route path="/watchlist" component={Watchlist} />
                                     <Route path="/movie/:id" component={MovieDetails} />
                                     <Route path="/tv/:id" component={TVDetails} />
-                                    <Route path="/continue-watching" component={ContinueWatching} />
                                 </Switch>
                             </main>
                             <Footer />
@@ -73,7 +72,6 @@ const { useState, useEffect, useRef, useCallback } = React;
                                     <Link to="/movies" className="hover:text-[#4facfe] transition-colors">Movies</Link>
                                     <Link to="/tv" className="hover:text-[#4facfe] transition-colors">TV Shows</Link>
                                     <Link to="/watchlist" className="hover:text-[#4facfe] transition-colors">Watchlist</Link>
-                                    <Link to="/continue-watching" className="hover:text-[#4facfe] transition-colors">Continue Watching</Link>
                                 </nav>
                                 <SearchBar />
                             </div>
@@ -574,25 +572,10 @@ const { useState, useEffect, useRef, useCallback } = React;
                                             {movie.title}
                                         </h1>
 
-                                        {/* Progress Bar */}
-                                        {getWatchProgress(movie.id) !== null && (
-                                            <div className="flex items-center gap-4">
-                                                <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
-                                                    <div 
-                                                        className="h-full bg-gradient-to-r from-[#00f2fe] to-[#4facfe]"
-                                                        style={{ width: `${getWatchProgress(movie.id)}%` }}
-                                                    />
-                                                </div>
-                                                <span className="text-gray-400">
-                                                    {Math.round(getWatchProgress(movie.id))}% watched
-                                                </span>
-                                            </div>
-                                        )}
+                                        <p className="text-xl text-gray-300 leading-relaxed">
+                                            {movie.overview}
+                                        </p>
                                     </div>
-
-                                    <p className="text-xl text-gray-300 leading-relaxed">
-                                        {movie.overview}
-                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -769,16 +752,10 @@ const { useState, useEffect, useRef, useCallback } = React;
                                                                     </div>
                                                                 )}
                                                                 
-                                                                {/* Episode Progress Bar */}
-                                                                {getEpisodeProgress(show.id, selectedSeason, episode.episode_number) && (
-                                                                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-800/50 backdrop-blur-sm">
-                                                                        <div 
-                                                                            className="h-full bg-gradient-to-r from-[#00f2fe] to-[#4facfe]"
-                                                                            style={{ 
-                                                                                width: `${getEpisodeProgress(show.id, selectedSeason, episode.episode_number)}%` 
-                                                                            }}
-                                                                        />
-                                                                    </div>
+                                                                {getEpisodeProgress(show.id, selectedSeason, episode.episode_number) !== null && (
+                                                                    <span>
+                                                                        {Math.round(getEpisodeProgress(show.id, selectedSeason, episode.episode_number))}% watched
+                                                                    </span>
                                                                 )}
                                                             </div>
                                                             
@@ -1238,91 +1215,6 @@ const { useState, useEffect, useRef, useCallback } = React;
                                     See all results →
                                 </Link>
                             </div>
-                        </div>
-                    )}
-                </div>
-            );
-        }
-
-        function ContinueWatching() {
-            const [items, setItems] = useState([]);
-            const [sortBy, setSortBy] = useState('recent');
-            const [filter, setFilter] = useState('all');
-
-            useEffect(() => {
-                const progress = JSON.parse(localStorage.getItem('vidLinkProgress') || '{}');
-                let watchedItems = Object.entries(progress)
-                    .map(([id, data]) => ({
-                        ...data,
-                        progressPercentage: data.type === 'movie' 
-                            ? (data.progress.watched / data.progress.duration) * 100
-                            : data.show_progress && data.last_season_watched && data.last_episode_watched
-                                ? ((data.show_progress[`s${data.last_season_watched}e${data.last_episode_watched}`] || {}).progress || {}).watched /
-                                  ((data.show_progress[`s${data.last_season_watched}e${data.last_episode_watched}`] || {}).progress || {}).duration * 100
-                                : 0
-                    }))
-                    .filter(item => {
-                        if (filter === 'movies') return item.type === 'movie';
-                        if (filter === 'shows') return item.type === 'tv';
-                        return true;
-                    })
-                    .filter(item => item.progress && item.progress.watched > 0);
-
-                watchedItems.sort((a, b) => {
-                    if (sortBy === 'recent') {
-                        return b.last_updated - a.last_updated;
-                    }
-                    return b.progressPercentage - a.progressPercentage;
-                });
-
-                setItems(watchedItems);
-            }, [sortBy, filter]);
-            return (
-                <div className="space-y-8">
-                    <div className="flex items-center justify-between flex-wrap gap-4">
-                        <h1 className="text-4xl font-bold text-gradient-animated">Continue Watching</h1>
-                        <div className="flex gap-4">
-                            <select
-                                value={filter}
-                                onChange={(e) => setFilter(e.target.value)}
-                                className="premium-glass rounded-xl px-6 py-3 outline-none cursor-pointer"
-                            >
-                                <option value="all">All Content</option>
-                                <option value="movies">Movies</option>
-                                <option value="shows">TV Shows</option>
-                            </select>
-                            <select
-                                value={sortBy}
-                                onChange={(e) => setSortBy(e.target.value)}
-                                className="premium-glass rounded-xl px-6 py-3 outline-none cursor-pointer"
-                            >
-                                <option value="recent">Recently Watched</option>
-                                <option value="progress">Progress</option>
-                            </select>
-                        </div>
-                    </div>
-                    {items.length === 0 ? (
-                        <div className="text-center py-16">
-                            <h3 className="text-2xl text-gray-400 mb-4">No items in continue watching</h3>
-                            <Link to="/" className="text-[#4facfe] hover:text-white transition-colors duration-300">
-                                Browse content →
-                            </Link>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                            {items.map(item => (
-                                <MovieCard 
-                                    key={item.id} 
-                                    item={{
-                                        id: item.id,
-                                        title: item.title,
-                                        name: item.title,
-                                        poster_path: item.poster_path,
-                                        media_type: item.type
-                                    }}
-                                    type={item.type}
-                                />
-                            ))}
                         </div>
                     )}
                 </div>
