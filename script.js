@@ -887,26 +887,8 @@ const { useState, useEffect, useRef, useCallback } = React;
             
             const formatRating = (rating) => rating ? rating.toFixed(1) : 'N/A';
             
-            // Use the existing getContentType function to determine media type
             const mediaType = type || item.media_type || (item.first_air_date ? 'tv' : 'movie');
-            
-            // Calculate progress percentage
-            const progress = JSON.parse(localStorage.getItem('vidLinkProgress') || '{}');
-            const itemProgress = progress[item.id];
-            
-            let progressPercentage = null;
-            if (itemProgress && itemProgress.progress) {
-                if (mediaType === 'movie') {
-                    const watched = itemProgress.progress.watched || 0;
-                    const duration = itemProgress.progress.duration || 1;
-                    progressPercentage = (watched / duration) * 100;
-                }
-            }
-
-            // Create the correct path based on media type
             const path = `/${mediaType}/${item.id}`;
-            
-            // Get the correct title based on media type
             const title = mediaType === 'tv' ? item.name : item.title;
             
             return (
@@ -929,14 +911,6 @@ const { useState, useEffect, useRef, useCallback } = React;
                                     <span className="text-gray-300">{item.release_date || item.first_air_date}</span>
                                     <span className="text-gray-300">{formatRating(item.vote_average)}</span>
                                 </div>
-                                {progressPercentage !== null && (
-                                    <div className="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
-                                        <div 
-                                            className="h-full bg-gradient-to-r from-[#00f2fe] to-[#4facfe]"
-                                            style={{ width: `${Math.min(100, progressPercentage)}%` }}
-                                        />
-                                    </div>
-                                )}
                             </div>
                         )}
                     </div>
@@ -1017,29 +991,9 @@ const { useState, useEffect, useRef, useCallback } = React;
         }
 
         function VideoPlayer({ type, tmdbId, season, episode, onClose }) {
-            useEffect(() => {
-                const handleMessage = (event) => {
-                    if (event.origin !== 'https://api.hexa.watch/') {
-                        return;
-                    }
-
-                    if (event.data && event.data.type === 'MEDIA_DATA') {
-                        const mediaData = JSON.parse(localStorage.getItem('vidLinkProgress') || '{}');
-                        const newMediaData = event.data.data;
-                        localStorage.setItem('vidLinkProgress', JSON.stringify({
-                            ...mediaData,
-                            ...newMediaData
-                        }));
-                    }
-                };
-
-                window.addEventListener('message', handleMessage);
-                return () => window.removeEventListener('message', handleMessage);
-            }, []);
-
             const iframeSrc = type === 'movie' 
-                ? `https://vidlink.pro/${tmdbId}`
-                : `https://vidlink.pro/${tmdbId}/${season}/${episode}`;
+                ? `https://api.hexa.watch/${tmdbId}`
+                : `https://api.hexa.watch/${tmdbId}/${season}/${episode}`;
 
             return (
                 <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center">
@@ -1059,93 +1013,6 @@ const { useState, useEffect, useRef, useCallback } = React;
                             allowFullScreen
                         />
                     </div>
-                </div>
-            );
-        }
-
-        function ContinueWatching() {
-            const [items, setItems] = useState([]);
-            const [sortBy, setSortBy] = useState('recent');
-            const [filter, setFilter] = useState('all');
-
-            useEffect(() => {
-                const progress = JSON.parse(localStorage.getItem('vidLinkProgress') || '{}');
-                let watchedItems = Object.entries(progress)
-                    .map(([id, data]) => ({
-                        ...data,
-                        progressPercentage: data.type === 'movie' 
-                            ? (data.progress.watched / data.progress.duration) * 100
-                            : data.show_progress && data.last_season_watched && data.last_episode_watched
-                                ? ((data.show_progress[`s${data.last_season_watched}e${data.last_episode_watched}`] || {}).progress || {}).watched /
-                                  ((data.show_progress[`s${data.last_season_watched}e${data.last_episode_watched}`] || {}).progress || {}).duration * 100
-                                : 0
-                    }))
-                    .filter(item => {
-                        if (filter === 'movies') return item.type === 'movie';
-                        if (filter === 'shows') return item.type === 'tv';
-                        return true;
-                    })
-                    .filter(item => item.progress && item.progress.watched > 0);
-
-                watchedItems.sort((a, b) => {
-                    if (sortBy === 'recent') {
-                        return b.last_updated - a.last_updated;
-                    }
-                    return b.progressPercentage - a.progressPercentage;
-                });
-
-                setItems(watchedItems);
-            }, [sortBy, filter]);
-
-            return (
-                <div className="space-y-8">
-                    <div className="flex items-center justify-between flex-wrap gap-4">
-                        <h1 className="text-4xl font-bold text-gradient-animated">Continue Watching</h1>
-                        <div className="flex gap-4">
-                            <select
-                                value={filter}
-                                onChange={(e) => setFilter(e.target.value)}
-                                className="premium-glass rounded-xl px-6 py-3 outline-none cursor-pointer"
-                            >
-                                <option value="all">All Content</option>
-                                <option value="movies">Movies</option>
-                                <option value="shows">TV Shows</option>
-                            </select>
-                            <select
-                                value={sortBy}
-                                onChange={(e) => setSortBy(e.target.value)}
-                                className="premium-glass rounded-xl px-6 py-3 outline-none cursor-pointer"
-                            >
-                                <option value="recent">Recently Watched</option>
-                                <option value="progress">Progress</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    {items.length === 0 ? (
-                        <div className="text-center py-16">
-                            <h3 className="text-2xl text-gray-400 mb-4">No items in continue watching</h3>
-                            <Link to="/" className="text-[#4facfe] hover:text-white transition-colors duration-300">
-                                Browse content →
-                            </Link>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                            {items.map(item => (
-                                <MovieCard 
-                                    key={item.id} 
-                                    item={{
-                                        id: item.id,
-                                        title: item.title,
-                                        name: item.title,
-                                        poster_path: item.poster_path,
-                                        media_type: item.type
-                                    }}
-                                    type={item.type}
-                                />
-                            ))}
-                        </div>
-                    )}
                 </div>
             );
         }
@@ -1377,32 +1244,89 @@ const { useState, useEffect, useRef, useCallback } = React;
             );
         }
 
-        const getWatchProgress = (movieId) => {
-            const progress = JSON.parse(localStorage.getItem('vidLinkProgress') || '{}');
-            const movieProgress = progress[movieId];
-            
-            if (!movieProgress || !movieProgress.progress) return null;
-            
-            const percentage = (movieProgress.progress.watched / movieProgress.progress.duration) * 100;
-            return isNaN(percentage) ? null : percentage;
-        };
+        function ContinueWatching() {
+            const [items, setItems] = useState([]);
+            const [sortBy, setSortBy] = useState('recent');
+            const [filter, setFilter] = useState('all');
 
-        const getEpisodeProgress = (showId, seasonNumber, episodeNumber) => {
-            const progress = JSON.parse(localStorage.getItem('vidLinkProgress') || '{}');
-            const showProgress = progress[showId];
-            
-            if (!showProgress || !showProgress.show_progress) return null;
-            
-            const episodeKey = `s${seasonNumber}e${episodeNumber}`;
-            const episodeProgress = showProgress.show_progress[episodeKey];
-            
-            if (!episodeProgress || !episodeProgress.progress) return null;
-            
-            return {
-                percentage: (episodeProgress.progress.watched / episodeProgress.progress.duration) * 100,
-                watched: episodeProgress.progress.watched,
-                duration: episodeProgress.progress.duration
-            };
-        };
+            useEffect(() => {
+                const progress = JSON.parse(localStorage.getItem('vidLinkProgress') || '{}');
+                let watchedItems = Object.entries(progress)
+                    .map(([id, data]) => ({
+                        ...data,
+                        progressPercentage: data.type === 'movie' 
+                            ? (data.progress.watched / data.progress.duration) * 100
+                            : data.show_progress && data.last_season_watched && data.last_episode_watched
+                                ? ((data.show_progress[`s${data.last_season_watched}e${data.last_episode_watched}`] || {}).progress || {}).watched /
+                                  ((data.show_progress[`s${data.last_season_watched}e${data.last_episode_watched}`] || {}).progress || {}).duration * 100
+                                : 0
+                    }))
+                    .filter(item => {
+                        if (filter === 'movies') return item.type === 'movie';
+                        if (filter === 'shows') return item.type === 'tv';
+                        return true;
+                    })
+                    .filter(item => item.progress && item.progress.watched > 0);
+
+                watchedItems.sort((a, b) => {
+                    if (sortBy === 'recent') {
+                        return b.last_updated - a.last_updated;
+                    }
+                    return b.progressPercentage - a.progressPercentage;
+                });
+
+                setItems(watchedItems);
+            }, [sortBy, filter]);
+            return (
+                <div className="space-y-8">
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                        <h1 className="text-4xl font-bold text-gradient-animated">Continue Watching</h1>
+                        <div className="flex gap-4">
+                            <select
+                                value={filter}
+                                onChange={(e) => setFilter(e.target.value)}
+                                className="premium-glass rounded-xl px-6 py-3 outline-none cursor-pointer"
+                            >
+                                <option value="all">All Content</option>
+                                <option value="movies">Movies</option>
+                                <option value="shows">TV Shows</option>
+                            </select>
+                            <select
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value)}
+                                className="premium-glass rounded-xl px-6 py-3 outline-none cursor-pointer"
+                            >
+                                <option value="recent">Recently Watched</option>
+                                <option value="progress">Progress</option>
+                            </select>
+                        </div>
+                    </div>
+                    {items.length === 0 ? (
+                        <div className="text-center py-16">
+                            <h3 className="text-2xl text-gray-400 mb-4">No items in continue watching</h3>
+                            <Link to="/" className="text-[#4facfe] hover:text-white transition-colors duration-300">
+                                Browse content →
+                            </Link>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                            {items.map(item => (
+                                <MovieCard 
+                                    key={item.id} 
+                                    item={{
+                                        id: item.id,
+                                        title: item.title,
+                                        name: item.title,
+                                        poster_path: item.poster_path,
+                                        media_type: item.type
+                                    }}
+                                    type={item.type}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        }
 
         ReactDOM.render(<App />, document.getElementById('root'));  
