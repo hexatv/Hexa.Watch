@@ -9,7 +9,6 @@ A sophisticated streaming platform .
 - 📱 Responsive design
 - ✨ Premium UI/UX
 - 🎨 Dynamic content loading
-- 🎯 Continue watching feature
 
 ## Tech Stack
 - React 17
