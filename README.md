@@ -3,7 +3,7 @@
 A sophisticated streaming platform .
 
 ## Key Features
-- 🎬 100K+ movies and 70K+ series
+- 🎬 100K+ movies and 70K+ tv episodes
 - 🔖 Personal watchlist
 - 🔍 search functionality
 - 📱 Responsive design
