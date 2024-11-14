@@ -751,12 +751,6 @@ const { useState, useEffect, useRef, useCallback } = React;
                                                                         <span className="text-gray-500">No Preview</span>
                                                                     </div>
                                                                 )}
-                                                                
-                                                                {getEpisodeProgress(show.id, selectedSeason, episode.episode_number) !== null && (
-                                                                    <span>
-                                                                        {Math.round(getEpisodeProgress(show.id, selectedSeason, episode.episode_number))}% watched
-                                                                    </span>
-                                                                )}
                                                             </div>
                                                             
                                                             <div className="flex-1 space-y-3">
@@ -779,15 +773,8 @@ const { useState, useEffect, useRef, useCallback } = React;
                                                                     </button>
                                                                 </div>
                                                                 
-                                                                <p className="text-gray-300">{episode.overview || "No description available."}</p>
-                                                                
                                                                 <div className="flex items-center gap-4 text-sm text-gray-400">
                                                                     <span>{new Date(episode.air_date).toLocaleDateString()}</span>
-                                                                    {getEpisodeProgress(show.id, selectedSeason, episode.episode_number) !== null && (
-                                                                        <span>
-                                                                            {Math.round(getEpisodeProgress(show.id, selectedSeason, episode.episode_number))}% watched
-                                                                        </span>
-                                                                    )}
                                                                 </div>
                                                             </div>
                                                         </div>
