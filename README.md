@@ -4,7 +4,6 @@ A sophisticated streaming platform .
 
 ## Key Features
 - 🎬 100K+ movies and 70K+ series
-- 📺 Track watching progress
 - 🔖 Personal watchlist
 - 🔍 search functionality
 - 📱 Responsive design
