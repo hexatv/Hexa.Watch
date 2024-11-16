@@ -956,8 +956,8 @@ const { useState, useEffect, useRef, useCallback } = React;
 
         function VideoPlayer({ type, tmdbId, season, episode, onClose }) {
             const iframeSrc = type === 'movie' 
-                ? `https://api.hexa.watch/movie/${tmdbId}?autoplay=true&savewatchprogress&colour=`
-                : `https://api.hexa.watch/tv/${tmdbId}/${season}/${episode}?autoplay=true&savewatchprogress&colour=`;
+                ? `https://api.hexa.watch/movie/${tmdbId}?autoplay=true&savewatchprogress&colour=00f2fe`
+                : `https://api.hexa.watch/tv/${tmdbId}/${season}/${episode}?autoplay=true&savewatchprogress&colour=00f2fe`;
 
             return (
                 <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center">
