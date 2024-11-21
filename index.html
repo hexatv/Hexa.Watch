@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#4facfe">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
     <title>Hexa - Discover Your Next Obsession</title>
     <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
@@ -16,5 +19,17 @@
 <body>
     <div id="root"></div>
     <script type="text/babel" src="script.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', async () => {
+                try {
+                    const registration = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+                    console.log('ServiceWorker registration successful with scope:', registration.scope);
+                } catch (err) {
+                    console.error('ServiceWorker registration failed:', err);
+                }
+            });
+        }
+    </script>
 </body>
 </html>
