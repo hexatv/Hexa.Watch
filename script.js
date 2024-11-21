@@ -31,6 +31,50 @@ const { useState, useEffect, useRef, useCallback } = React;
             );
         }
 
+        function InstallPWA() {
+            const [installPrompt, setInstallPrompt] = useState(null);
+            const [isInstalled, setIsInstalled] = useState(false);
+
+            useEffect(() => {
+                const handleBeforeInstallPrompt = (e) => {
+                    e.preventDefault();
+                    setInstallPrompt(e);
+                };
+
+                window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+                
+                if (window.matchMedia('(display-mode: standalone)').matches) {
+                    setIsInstalled(true);
+                }
+
+                return () => {
+                    window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+                };
+            }, []);
+
+            const handleInstallClick = async () => {
+                if (!installPrompt) return;
+                const result = await installPrompt.prompt();
+                if (result.outcome === 'accepted') {
+                    setIsInstalled(true);
+                    setInstallPrompt(null);
+                }
+            };
+
+            if (!installPrompt || isInstalled) return null;
+
+            return (
+                <button
+                    onClick={handleInstallClick}
+                    className="px-4 py-2 rounded-full bg-gradient-to-r from-[#00f2fe] to-[#4facfe] hover:shadow-lg hover:shadow-[#4facfe]/20 transition-all duration-300 flex items-center space-x-2"
+                >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <span>Install App</span>
+                </button>
+            );
+        }
         function App() {
             return (
                 <BrowserRouter>
@@ -57,23 +101,103 @@ const { useState, useEffect, useRef, useCallback } = React;
         }
 
         function Header() {
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+
             return (
                 <header className="fixed w-full z-50 backdrop-blur">
                     <div className="absolute inset-0 bg-black/90"></div>
-                    <nav className="container mx-auto px-6 py-4 relative">
+                    <nav className="container mx-auto px-4 py-4 relative">
                         <div className="flex justify-between items-center">
                             <Link to="/" className="flex items-center space-x-2">
-                                <span className="text-4xl font-bold gradient-text tracking-tight animate-float">Hexa</span>
-                                <span className="text-xs text-gray-400 uppercase tracking-widest">Premium</span>
+                                <span className="text-3xl md:text-4xl font-bold gradient-text tracking-tight animate-float">Hexa Watch</span>
+                                <span className="text-xs text-gray-400 uppercase tracking-widest">V2</span>
                             </Link>
-                            <div className="flex items-center space-x-6">
-                                <nav className="flex space-x-6">
-                                    <Link to="/" className="hover:text-[#4facfe] transition-colors">Home</Link>
-                                    <Link to="/movies" className="hover:text-[#4facfe] transition-colors">Movies</Link>
-                                    <Link to="/tv" className="hover:text-[#4facfe] transition-colors">TV Shows</Link>
-                                    <Link to="/watchlist" className="hover:text-[#4facfe] transition-colors">Watchlist</Link>
+
+                            {/* Mobile Menu Button */}
+                            <button 
+                                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                                className="md:hidden p-2"
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    {isMenuOpen ? (
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    ) : (
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                                    )}
+                                </svg>
+                            </button>
+
+                            {/* Desktop Navigation */}
+                            <div className="hidden md:flex items-center space-x-6">
+                                <Link to="/movies" className="text-gray-300 hover:text-white transition-colors">Movies</Link>
+                                <Link to="/tv" className="text-gray-300 hover:text-white transition-colors">TV Shows</Link>
+                                <Link to="/search" className="text-gray-300 hover:text-white transition-colors">Search</Link>
+                                <Link to="/watchlist" className="text-gray-300 hover:text-white transition-colors">Watchlist</Link>
+                                <InstallPWA />
+                                <a 
+                                    href="https://discord.gg/fF7TwrjR6T" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="px-4 py-2 rounded-full bg-[#5865F2] hover:bg-[#4752C4] transition-colors flex items-center space-x-2"
+                                >
+                                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
+                                    </svg>
+                                    <span>Discord</span>
+                                </a>
+                                <a 
+                                    href="https://api.hexa.watch" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="px-4 py-2 rounded-full bg-gradient-to-r from-[#00f2fe] to-[#4facfe] hover:shadow-lg hover:shadow-[#4facfe]/20 transition-all duration-300 flex items-center space-x-2"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                                    </svg>
+                                    <span>API</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        {/* Mobile Menu */}
+                        <div className={`md:hidden absolute top-full left-0 right-0 bg-black/95 backdrop-blur-lg transition-all duration-300 ${isMenuOpen ? 'max-h-screen py-4' : 'max-h-0 overflow-hidden'}`}>
+                            <div className="flex flex-col space-y-4 px-4">
+                                <nav className="flex flex-col space-y-2">
+                                    <Link to="/" className="hover:text-[#4facfe] transition-colors py-2" onClick={() => setIsMenuOpen(false)}>Home</Link>
+                                    <Link to="/movies" className="hover:text-[#4facfe] transition-colors py-2" onClick={() => setIsMenuOpen(false)}>Movies</Link>
+                                    <Link to="/tv" className="hover:text-[#4facfe] transition-colors py-2" onClick={() => setIsMenuOpen(false)}>TV Shows</Link>
+                                    <Link to="/watchlist" className="hover:text-[#4facfe] transition-colors py-2" onClick={() => setIsMenuOpen(false)}>Watchlist</Link>
                                 </nav>
-                                <SearchBar />
+                                <div className="flex flex-col space-y-3">
+                                    <SearchBar />
+                                    <div className="flex space-x-3">
+                                        <a 
+                                            href="https://discord.gg/fF7TwrjR6T" 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="flex-1 px-4 py-2 rounded-full bg-[#5865F2] hover:bg-[#4752C4] transition-colors flex items-center justify-center space-x-2"
+                                        >
+                                            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
+                                            </svg>
+                                            <span>Discord</span>
+                                        </a>
+                                        <div className="flex items-center space-x-4">
+                                            <a href="https://api.hexa.watch" 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className="px-4 py-2 rounded-full bg-gradient-to-r from-[#00f2fe] to-[#4facfe] hover:shadow-lg hover:shadow-[#4facfe]/20 transition-all duration-300 flex items-center space-x-2"
+                                            >
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                                                </svg>
+                                                <span>API</span>
+                                            </a>
+                                            <InstallPWA />
+                                        </div>
+                                        <SearchBar />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </nav>
@@ -90,8 +214,10 @@ const { useState, useEffect, useRef, useCallback } = React;
             const [loading, setLoading] = useState({});
 
             const sectionTitles = {
-                trending: "Trending This Week",
-                trendingDay: "Trending Today",
+                trendingMoviesWeek: "Trending Movies This Week",
+                trendingTVWeek: "Trending TV Shows This Week",
+                trendingMoviesDay: "Trending Movies Today",
+                trendingTVDay: "Trending TV Shows Today",
                 topRatedMovies: "Top Rated Movies",
                 topRatedTV: "Top Rated TV Shows",
                 upcoming: "Upcoming Movies",
@@ -107,14 +233,37 @@ const { useState, useEffect, useRef, useCallback } = React;
             };
 
             const getContentType = (section, item) => {
-                const movieSections = ['topRatedMovies', 'upcoming', 'popularMovies', 'nowPlaying', 'action', 'comedy', 'horror', 'documentary'];
-                const tvSections = ['topRatedTV', 'popularTV', 'airingToday', 'onTheAir'];
+                // TV-specific sections
+                if (['topRatedTV', 'popularTV', 'airingToday', 'onTheAir'].includes(section)) {
+                    return 'tv';
+                }
                 
-                if (movieSections.includes(section)) return 'movie';
-                if (tvSections.includes(section)) return 'tv';
+                // Movie-specific sections
+                if (['topRatedMovies', 'popularMovies', 'upcoming', 'nowPlaying', 'action', 'comedy', 'horror', 'documentary'].includes(section)) {
+                    return 'movie';
+                }
                 
-                // For trending sections, check the item's media_type
-                return item.media_type || (item.first_air_date ? 'tv' : 'movie');
+                // For trending sections, we need more precise detection
+                if (['trending', 'trendingDay'].includes(section)) {
+                    // First check media_type from API
+                    if (item.media_type) {
+                        return item.media_type;
+                    }
+                    // Then check for TV-specific properties
+                    if (item.first_air_date || item.name) {
+                        return 'tv';
+                    }
+                    // Then check for Movie-specific properties
+                    if (item.release_date || item.title) {
+                        return 'movie';
+                    }
+                }
+                
+                // Default fallback - do thorough property check
+                if (item.first_air_date || item.name) {
+                    return 'tv';
+                }
+                return 'movie';
             };
 
             const renderSection = (sectionKey) => {
@@ -125,11 +274,7 @@ const { useState, useEffect, useRef, useCallback } = React;
                             {sections[sectionKey] && sections[sectionKey].map(item => (
                                 <MovieCard 
                                     key={item.id} 
-                                    item={{
-                                        ...item,
-                                        name: item.name || item.title,
-                                        title: item.title || item.name,
-                                    }}
+                                    item={item} 
                                     type={getContentType(sectionKey, item)}
                                 />
                             ))}
@@ -140,8 +285,10 @@ const { useState, useEffect, useRef, useCallback } = React;
 
             useEffect(() => {
                 Promise.all([
-                    axios.get(`${BASE_URL}/trending/all/week?api_key=${API_KEY}`),
-                    axios.get(`${BASE_URL}/trending/all/day?api_key=${API_KEY}`),
+                    axios.get(`${BASE_URL}/trending/movie/week?api_key=${API_KEY}`),
+                    axios.get(`${BASE_URL}/trending/tv/week?api_key=${API_KEY}`),
+                    axios.get(`${BASE_URL}/trending/movie/day?api_key=${API_KEY}`),
+                    axios.get(`${BASE_URL}/trending/tv/day?api_key=${API_KEY}`),
                     axios.get(`${BASE_URL}/movie/top_rated?api_key=${API_KEY}`),
                     axios.get(`${BASE_URL}/movie/upcoming?api_key=${API_KEY}`),
                     axios.get(`${BASE_URL}/movie/popular?api_key=${API_KEY}`),
@@ -155,8 +302,10 @@ const { useState, useEffect, useRef, useCallback } = React;
                     axios.get(`${BASE_URL}/discover/movie?api_key=${API_KEY}&with_genres=27`),
                     axios.get(`${BASE_URL}/discover/movie?api_key=${API_KEY}&with_genres=99`)
                 ]).then(([
-                    trendingWeekRes,
-                    trendingDayRes,
+                    trendingMoviesWeekRes,
+                    trendingTVWeekRes,
+                    trendingMoviesDayRes,
+                    trendingTVDayRes,
                     topRatedMoviesRes,
                     upcomingRes,
                     popularMoviesRes,
@@ -170,10 +319,12 @@ const { useState, useEffect, useRef, useCallback } = React;
                     horrorRes,
                     documentaryRes
                 ]) => {
-                    setFeatured(trendingWeekRes.data.results[0]);
+                    setFeatured(trendingMoviesWeekRes.data.results[0]);
                     setSections({
-                        trending: trendingWeekRes.data.results.slice(1),
-                        trendingDay: trendingDayRes.data.results,
+                        trendingMoviesWeek: trendingMoviesWeekRes.data.results.slice(1),
+                        trendingTVWeek: trendingTVWeekRes.data.results,
+                        trendingMoviesDay: trendingMoviesDayRes.data.results,
+                        trendingTVDay: trendingTVDayRes.data.results,
                         topRatedMovies: topRatedMoviesRes.data.results,
                         topRatedTV: topRatedTVRes.data.results,
                         upcoming: upcomingRes.data.results,
@@ -217,7 +368,7 @@ const { useState, useEffect, useRef, useCallback } = React;
                             <CategorySlider 
                                 title={sectionTitles[activeSection]} 
                                 items={sections[activeSection]}
-                                type={activeSection.includes('TV') ? 'tv' : 'movie'}
+                                type={getContentType(activeSection, sections[activeSection][0])}
                             />
                         )}
                     </div>
@@ -377,7 +528,7 @@ const { useState, useEffect, useRef, useCallback } = React;
             return (
                 <div className="space-y-4">
                     <h2 className="text-2xl font-bold">{title}</h2>
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
                         {items.map((item, index) => (
                             <MovieCard key={item.id} item={item} type={type} />
                         ))}
@@ -851,7 +1002,28 @@ const { useState, useEffect, useRef, useCallback } = React;
             
             const formatRating = (rating) => rating ? rating.toFixed(1) : 'N/A';
             
-            const mediaType = type || item.media_type || (item.first_air_date ? 'tv' : 'movie');
+            // Determine media type with more precise logic
+            const getMediaType = () => {
+                // If type is explicitly provided and valid, use it
+                if (type === 'tv' || type === 'movie') {
+                    return type;
+                }
+                // If item has explicit media_type, use it
+                if (item.media_type && (item.media_type === 'tv' || item.media_type === 'movie')) {
+                    return item.media_type;
+                }
+                // Deduce from item properties
+                if (item.first_air_date || item.name) {
+                    return 'tv';
+                }
+                if (item.release_date || item.title) {
+                    return 'movie';
+                }
+                // Final fallback
+                return 'movie';
+            };
+            
+            const mediaType = getMediaType();
             const path = `/${mediaType}/${item.id}`;
             const title = mediaType === 'tv' ? item.name : item.title;
             
@@ -1101,50 +1273,11 @@ const { useState, useEffect, useRef, useCallback } = React;
 
         function SearchBar() {
             const [query, setQuery] = useState('');
-            const [results, setResults] = useState([]);
             const [isOpen, setIsOpen] = useState(false);
-            const searchTimeout = useRef(null);
             const searchRef = useRef(null);
 
-            useEffect(() => {
-                const handleClickOutside = (event) => {
-                    if (searchRef.current && !searchRef.current.contains(event.target)) {
-                        setIsOpen(false);
-                    }
-                };
-
-                document.addEventListener('mousedown', handleClickOutside);
-                return () => document.removeEventListener('mousedown', handleClickOutside);
-            }, []);
-
-            useEffect(() => {
-                if (query.length < 2) {
-                    setResults([]);
-                    return;
-                }
-
-                if (searchTimeout.current) {
-                    clearTimeout(searchTimeout.current);
-                }
-
-                searchTimeout.current = setTimeout(() => {
-                    axios.get(`${BASE_URL}/search/multi?api_key=${API_KEY}&query=${encodeURIComponent(query)}`)
-                        .then(response => {
-                            setResults(response.data.results
-                                .filter(item => item.poster_path)
-                                .slice(0, 5));
-                        });
-                }, 300);
-
-                return () => {
-                    if (searchTimeout.current) {
-                        clearTimeout(searchTimeout.current);
-                    }
-                };
-            }, [query]);
-
             return (
-                <div ref={searchRef} className="relative">
+                <div ref={searchRef} className="relative w-full md:w-auto">
                     <div className="premium-glass rounded-full overflow-hidden flex items-center">
                         <input
                             type="text"
@@ -1154,7 +1287,7 @@ const { useState, useEffect, useRef, useCallback } = React;
                                 setIsOpen(true);
                             }}
                             placeholder="Search movies & TV shows..."
-                            className="w-64 px-6 py-2 bg-transparent outline-none"
+                            className="w-full md:w-64 px-6 py-2 bg-transparent outline-none"
                         />
                         <Link 
                             to={query.length >= 2 ? `/search?q=${encodeURIComponent(query)}` : '/search'}
@@ -1165,47 +1298,9 @@ const { useState, useEffect, useRef, useCallback } = React;
                             </svg>
                         </Link>
                     </div>
-
-                    {isOpen && results.length > 0 && (
-                        <div className="absolute top-full mt-2 w-full premium-glass rounded-xl overflow-hidden py-2">
-                            {results.map(item => (
-                                <Link
-                                    key={item.id}
-                                    to={`/${item.media_type}/${item.id}`}
-                                    className="flex items-center gap-3 px-4 py-2 hover:bg-white/10 transition-colors"
-                                    onClick={() => {
-                                        setIsOpen(false);
-                                        setQuery('');
-                                    }}
-                                >
-                                    <img 
-                                        src={`${IMG_BASE_URL}${item.poster_path}`}
-                                        alt={item.title || item.name}
-                                        className="w-10 h-15 object-cover rounded"
-                                    />
-                                    <div>
-                                        <div className="font-medium">{item.title || item.name}</div>
-                                        <div className="text-sm text-gray-400">
-                                            {item.media_type === 'movie' ? 'Movie' : 'TV Show'}
-                                        </div>
-                                    </div>
-                                </Link>
-                            ))}
-                            <div className="px-4 pt-2 mt-2 border-t border-white/10">
-                                <Link
-                                    to={`/search?q=${encodeURIComponent(query)}`}
-                                    className="block w-full text-center py-2 text-[#4facfe] hover:text-white transition-colors"
-                                    onClick={() => {
-                                        setIsOpen(false);
-                                    }}
-                                >
-                                    See all results →
-                                </Link>
-                            </div>
-                        </div>
-                    )}
                 </div>
             );
         }
 
         ReactDOM.render(<App />, document.getElementById('root'));  
+
