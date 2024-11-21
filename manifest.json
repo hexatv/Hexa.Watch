@@ -1,0 +1,50 @@
+{
+    "name": "Hexa Watch",
+    "short_name": "Hexa",
+    "description": "Premium Streaming Platform",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0a0a0a",
+    "theme_color": "#4facfe",
+    "icons": [
+      {
+        "src": "/icons/icon-192x192.png",
+        "sizes": "192x192",
+        "type": "image/png",
+        "purpose": "any maskable"
+      },
+      {
+        "src": "/icons/icon-512x512.png",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "any maskable"
+      }
+    ],
+    "screenshots": [
+      {
+        "src": "/screenshots/desktop.png",
+        "sizes": "1280x720",
+        "type": "image/png",
+        "form_factor": "wide"
+      },
+      {
+        "src": "/screenshots/mobile.png",
+        "sizes": "720x1280",
+        "type": "image/png",
+        "form_factor": "narrow"
+      }
+    ],
+    "prefer_related_applications": false,
+    "shortcuts": [
+      {
+        "name": "Movies",
+        "url": "/movies",
+        "icons": [{ "src": "/icons/movies.png", "sizes": "96x96" }]
+      },
+      {
+        "name": "TV Shows",
+        "url": "/tv",
+        "icons": [{ "src": "/icons/tv.png", "sizes": "96x96" }]
+      }
+    ]
+  }
