@@ -1,0 +1,12 @@
+{
+    "name": "hexa-watch",
+    "version": "1.0.0",
+    "description": "Premium Streaming Platform",
+    "main": "index.html",
+    "scripts": {
+      "start": "serve -s ."
+    },
+    "dependencies": {
+      "serve": "^14.2.1"
+    }
+  }
