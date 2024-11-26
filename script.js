@@ -11,6 +11,11 @@ const { useState, useEffect, useRef, useCallback } = React;
             updateWatchlist: () => {}
         });
 
+        const WatchProgressContext = React.createContext({
+            progress: {},
+            updateProgress: () => {}
+        });
+
         function WatchlistProvider({ children }) {
             const [watchlist, setWatchlist] = useState([]);
 
@@ -28,6 +33,46 @@ const { useState, useEffect, useRef, useCallback } = React;
                 <WatchlistContext.Provider value={{ watchlist, updateWatchlist }}>
                     {children}
                 </WatchlistContext.Provider>
+            );
+        }
+
+        function WatchProgressProvider({ children }) {
+            const [progress, setProgress] = useState({});
+
+            useEffect(() => {
+                try {
+                    const savedProgress = JSON.parse(localStorage.getItem('watchProgress') || '{}');
+                    setProgress(savedProgress);
+                } catch (error) {
+                    console.error('Failed to load watch progress:', error);
+                    setProgress({});
+                }
+            }, []);
+
+            const updateProgress = useCallback((mediaId, data) => {
+                if (!mediaId || !data) return;
+                
+                setProgress(prev => {
+                    const updated = {
+                        ...prev,
+                        [mediaId]: {
+                            ...data,
+                            lastUpdated: new Date().toISOString()
+                        }
+                    };
+                    try {
+                        localStorage.setItem('watchProgress', JSON.stringify(updated));
+                    } catch (error) {
+                        console.error('Failed to save watch progress:', error);
+                    }
+                    return updated;
+                });
+            }, []);
+
+            return (
+                <WatchProgressContext.Provider value={{ progress, updateProgress }}>
+                    {children}
+                </WatchProgressContext.Provider>
             );
         }
 
@@ -79,22 +124,25 @@ const { useState, useEffect, useRef, useCallback } = React;
             return (
                 <BrowserRouter>
                     <WatchlistProvider>
-                        <div className="min-h-screen bg-gray-900 text-white">
-                            <Header />
-                            <main className="container mx-auto px-4 py-6">
-                                <Switch>
-                                    <Route exact path="/" component={Home} />
-                                    <Route exact path="/home" component={Home} />
-                                    <Route exact path="/search" component={Search} />
-                                    <Route exact path="/movies" component={MovieList} />
-                                    <Route exact path="/tv" component={TVShowList} />
-                                    <Route path="/watchlist" component={Watchlist} />
-                                    <Route path="/movie/:id" component={MovieDetails} />
-                                    <Route path="/tv/:id" component={TVDetails} />
-                                </Switch>
-                            </main>
-                            <Footer />
-                        </div>
+                        <WatchProgressProvider>
+                            <div className="min-h-screen bg-gray-900 text-white">
+                                <Header />
+                                <main className="container mx-auto px-4 py-6">
+                                    <Switch>
+                                        <Route exact path="/" component={Home} />
+                                        <Route exact path="/home" component={Home} />
+                                        <Route exact path="/search" component={Search} />
+                                        <Route exact path="/movies" component={MovieList} />
+                                        <Route exact path="/tv" component={TVShowList} />
+                                        <Route path="/watchlist" component={Watchlist} />
+                                        <Route path="/movie/:id" component={MovieDetails} />
+                                        <Route path="/tv/:id" component={TVDetails} />
+                                        <Route path="/continue-watching" component={ContinueWatching} />
+                                    </Switch>
+                                </main>
+                                <Footer />
+                            </div>
+                        </WatchProgressProvider>
                     </WatchlistProvider>
                 </BrowserRouter>
             );
@@ -119,6 +167,7 @@ const { useState, useEffect, useRef, useCallback } = React;
                                 <Link to="/movies" className="text-gray-300 hover:text-white transition-colors">Movies</Link>
                                 <Link to="/tv" className="text-gray-300 hover:text-white transition-colors">TV Shows</Link>
                                 <Link to="/watchlist" className="text-gray-300 hover:text-white transition-colors">Watchlist</Link>
+                                <Link to="/continue-watching" className="text-gray-300 hover:text-white transition-colors">Continue Watching</Link>
                                 <InstallPWA />
                                 <a 
                                     href="https://discord.gg/fF7TwrjR6T" 
@@ -168,6 +217,7 @@ const { useState, useEffect, useRef, useCallback } = React;
                                     <Link to="/movies" className="hover:text-[#4facfe] transition-colors py-2" onClick={() => setIsMenuOpen(false)}>Movies</Link>
                                     <Link to="/tv" className="hover:text-[#4facfe] transition-colors py-2" onClick={() => setIsMenuOpen(false)}>TV Shows</Link>
                                     <Link to="/watchlist" className="hover:text-[#4facfe] transition-colors py-2" onClick={() => setIsMenuOpen(false)}>Watchlist</Link>
+                                    <Link to="/continue-watching" className="hover:text-[#4facfe] transition-colors py-2" onClick={() => setIsMenuOpen(false)}>Continue Watching</Link>
                                 </nav>
                                 <div className="flex flex-col space-y-4">
                                     <a 
@@ -1123,9 +1173,41 @@ const { useState, useEffect, useRef, useCallback } = React;
         }
 
         function VideoPlayer({ type, tmdbId, season, episode, onClose }) {
+            const { progress, updateProgress } = React.useContext(WatchProgressContext);
+            const iframeRef = useRef(null);
+            
             const iframeSrc = type === 'movie' 
                 ? `https://api.hexa.watch/movie/${tmdbId}`
                 : `https://api.hexa.watch/tv/${tmdbId}/${season}/${episode}`;
+
+            useEffect(() => {
+                const handleMessage = (event) => {
+                    if (!event.origin.includes('api.hexa.watch')) return;
+                    
+                    if (event.data && event.data.type === 'MEDIA_DATA') {
+                        updateProgress(tmdbId, {
+                            id: tmdbId,
+                            type: type,
+                            season: season,
+                            episode: episode,
+                            progress: event.data.data
+                        });
+                    }
+                    
+                    if (event.data && event.data.type === 'REQUEST_WATCH_PROGRESS') {
+                        const savedProgress = progress[tmdbId];
+                        if (savedProgress && iframeRef.current) {
+                            iframeRef.current.contentWindow.postMessage({
+                                type: 'WATCH_PROGRESS_DATA',
+                                data: savedProgress.progress
+                            }, '*');
+                        }
+                    }
+                };
+
+                window.addEventListener('message', handleMessage);
+                return () => window.removeEventListener('message', handleMessage);
+            }, [tmdbId, type, season, episode, progress, updateProgress]);
 
             return (
                 <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center">
@@ -1139,6 +1221,7 @@ const { useState, useEffect, useRef, useCallback } = React;
                             </svg>
                         </button>
                         <iframe 
+                            ref={iframeRef}
                             src={iframeSrc}
                             className="w-full h-full rounded-xl"
                             frameBorder="0" 
@@ -1257,6 +1340,105 @@ const { useState, useEffect, useRef, useCallback } = React;
                             </svg>
                         </Link>
                     </div>
+                </div>
+            );
+        }
+
+        function ContinueWatching() {
+            const { progress } = React.useContext(WatchProgressContext);
+            const [items, setItems] = useState([]);
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                const fetchDetails = async () => {
+                    setLoading(true);
+                    const progressItems = Object.values(progress).sort((a, b) => 
+                        new Date(b.lastUpdated) - new Date(a.lastUpdated)
+                    );
+
+                    const detailedItems = await Promise.all(
+                        progressItems.map(async (item) => {
+                            const endpoint = item.type === 'movie' ? 'movie' : 'tv';
+                            try {
+                                const response = await axios.get(
+                                    `${BASE_URL}/${endpoint}/${item.id}?api_key=${API_KEY}`
+                                );
+                                return {
+                                    ...response.data,
+                                    progress: item.progress,
+                                    type: item.type,
+                                    season: item.season,
+                                    episode: item.episode
+                                };
+                            } catch (error) {
+                                console.error('Error fetching details:', error);
+                                return null;
+                            }
+                        })
+                    );
+
+                    setItems(detailedItems.filter(item => item !== null));
+                    setLoading(false);
+                };
+
+                fetchDetails();
+            }, [progress]);
+
+            const formatProgress = (progress) => {
+                const percentage = (progress.watched / progress.duration) * 100;
+                return Math.round(percentage);
+            };
+
+            return (
+                <div className="pt-4">
+                    <h2 className="text-4xl font-bold mb-8 text-gradient-animated">Continue Watching</h2>
+                    {loading ? (
+                        <div className="flex justify-center py-20">
+                            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#4facfe]"></div>
+                        </div>
+                    ) : items.length === 0 ? (
+                        <div className="text-center py-16">
+                            <h3 className="text-2xl text-gray-400 mb-4">No items in progress</h3>
+                            <Link to="/" className="text-[#4facfe] hover:text-white transition-colors duration-300">
+                                Browse content →
+                            </Link>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                            {items.map((item) => (
+                                <Link 
+                                    key={`${item.type}-${item.id}`}
+                                    to={`/${item.type}/${item.id}`}
+                                    className="group relative block overflow-hidden rounded-xl transition-transform duration-300 hover:-translate-y-2"
+                                >
+                                    <div className="relative aspect-[2/3]">
+                                        <img 
+                                            src={`${IMG_BASE_URL}${item.poster_path}`}
+                                            alt={item.title || item.name}
+                                            className="w-full h-full object-cover rounded-xl"
+                                        />
+                                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent p-4">
+                                            <h3 className="text-white font-semibold mb-1">{item.title || item.name}</h3>
+                                            {item.type === 'tv' && (
+                                                <p className="text-sm text-gray-300 mb-1">
+                                                    S{item.season} E{item.episode}
+                                                </p>
+                                            )}
+                                            <div className="w-full bg-gray-700 rounded-full h-1.5 mt-2">
+                                                <div 
+                                                    className="bg-[#4facfe] h-full rounded-full"
+                                                    style={{ width: `${formatProgress(item.progress)}%` }}
+                                                />
+                                            </div>
+                                            <p className="text-xs text-gray-400 mt-1">
+                                                {formatProgress(item.progress)}% completed
+                                            </p>
+                                        </div>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    )}
                 </div>
             );
         }
