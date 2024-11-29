@@ -1,4 +1,7 @@
-const CACHE_NAME = 'hexa-cache-v1';
+const CACHE_NAME = 'hexa-cache-v2';
+const TIMEOUT = 5000; // 5 second timeout
+
+// Resources to pre-cache
 const urlsToCache = [
     '/',
     '/index.html',
@@ -7,63 +10,24 @@ const urlsToCache = [
     '/manifest.json'
 ];
 
+// Helper function to handle timeouts
+const timeoutFetch = (request, timeout = TIMEOUT) => {
+    return Promise.race([
+        fetch(request),
+        new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout')), timeout)
+        )
+    ]);
+};
+
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(cache => cache.addAll(urlsToCache))
+            .then(() => self.skipWaiting())
     );
 });
 
-self.addEventListener('fetch', event => {
-    event.respondWith(
-        caches.match(event.request)
-            .then(response => {
-                // Return cached version if found
-                if (response) {
-                    return response;
-                }
-
-                // Clone the request because it can only be used once
-                const fetchRequest = event.request.clone();
-
-                // Try fetching from network
-                return fetch(fetchRequest)
-                    .then(response => {
-                        // Check if response is valid
-                        if (!response || response.status !== 200 || response.type !== 'basic') {
-                            return response;
-                        }
-
-                        // Clone the response because it can only be used once
-                        const responseToCache = response.clone();
-
-                        // Cache the fetched response
-                        caches.open(CACHE_NAME)
-                            .then(cache => {
-                                cache.put(event.request, responseToCache);
-                            });
-
-                        return response;
-                    })
-                    .catch(error => {
-                        // If fetch fails, return a fallback response for navigation requests
-                        if (event.request.mode === 'navigate') {
-                            return caches.match('/index.html');
-                        }
-                        
-                        // For other requests, return a simple error response
-                        return new Response('Network error occurred', {
-                            status: 503,
-                            headers: new Headers({
-                                'Content-Type': 'text/plain'
-                            })
-                        });
-                    });
-            })
-    );
-});
-
-// Clean up old caches
 self.addEventListener('activate', event => {
     event.waitUntil(
         caches.keys().then(cacheNames => {
@@ -74,6 +38,58 @@ self.addEventListener('activate', event => {
                     }
                 })
             );
-        })
+        }).then(() => self.clients.claim())
+    );
+});
+
+self.addEventListener('fetch', event => {
+    // Don't cache API requests
+    if (event.request.url.includes('api.themoviedb.org')) {
+        event.respondWith(fetch(event.request));
+        return;
+    }
+
+    event.respondWith(
+        caches.match(event.request)
+            .then(cachedResponse => {
+                if (cachedResponse) {
+                    // Return cached response and update cache in background
+                    event.waitUntil(
+                        timeoutFetch(event.request)
+                            .then(response => {
+                                if (response && response.status === 200) {
+                                    caches.open(CACHE_NAME)
+                                        .then(cache => cache.put(event.request, response));
+                                }
+                            })
+                            .catch(() => {/* Ignore errors */})
+                    );
+                    return cachedResponse;
+                }
+
+                // No cache, try network
+                return timeoutFetch(event.request.clone())
+                    .then(response => {
+                        if (!response || response.status !== 200) {
+                            return response;
+                        }
+
+                        // Cache successful responses
+                        caches.open(CACHE_NAME)
+                            .then(cache => cache.put(event.request, response.clone()));
+                        return response;
+                    })
+                    .catch(error => {
+                        console.log('Fetch failed:', error);
+                        // Return a custom offline response
+                        if (event.request.mode === 'navigate') {
+                            return caches.match('/index.html');
+                        }
+                        return new Response('Offline', {
+                            status: 503,
+                            statusText: 'Service Unavailable'
+                        });
+                    });
+            })
     );
 });
