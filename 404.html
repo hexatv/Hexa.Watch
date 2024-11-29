@@ -4,8 +4,10 @@
     <meta charset="utf-8">
     <title>Redirecting...</title>
     <script>
-        const segment = window.location.pathname;
-        window.location.replace(`/?path=${segment}`);
+        // Get the current path excluding the domain
+        const path = window.location.pathname;
+        // Redirect to the main page with a route parameter
+        window.location.replace(`/?route=${encodeURIComponent(path)}`);
     </script>
 </head>
 <body>
