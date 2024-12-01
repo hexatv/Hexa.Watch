@@ -1227,7 +1227,7 @@ const { useState, useEffect, useRef, useCallback } = React;
                             frameBorder="0" 
                             allowFullScreen
                             allow="autoplay; fullscreen"
-                        ></iframe>
+                        />
                     </div>
                 </div>
             );
