@@ -1177,8 +1177,8 @@ const { useState, useEffect, useRef, useCallback } = React;
             const iframeRef = useRef(null);
             
             const iframeSrc = type === 'movie' 
-                ? `https://api.hexa.watch/movie/${tmdbId}`
-                : `https://api.hexa.watch/tv/${tmdbId}/${season}/${episode}`;
+                ? `https://api.hexa.watch/movie/${tmdbId}?autoplay=1`
+                : `https://api.hexa.watch/tv/${tmdbId}/${season}/${episode}?autoplay=1`;
 
             useEffect(() => {
                 const handleMessage = (event) => {
