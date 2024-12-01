@@ -1225,9 +1225,9 @@ const { useState, useEffect, useRef, useCallback } = React;
                             src={iframeSrc}
                             className="w-full h-full rounded-xl"
                             frameBorder="0" 
-                            allowfullscreen
-                            allow="autoplay; fullscreen">         
-                        />
+                            allowFullScreen
+                            allow="autoplay; fullscreen"
+                        ></iframe>
                     </div>
                 </div>
             );
